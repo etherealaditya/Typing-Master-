@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Typing Master - Animated Keyboard Background</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    body {
+      height: 100vh;
+      width: 100vw;
+      background: linear-gradient(135deg, #e0e7ff 0%, #f5f7fa 100%);
+      position: relative;
+    }
+    #keyboard-bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      display: block;
+    }
+    .content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      margin-top: 10vh;
+    }
+    h1 {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #364f6b;
+      font-size: 3rem;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="keyboard-bg-canvas"></canvas>
+  <div class="content">
+    <h1>Welcome to Typing Master!</h1>
+    <!-- Your app content goes here -->
+  </div>
+  <script>
+    const canvas = document.getElementById('keyboard-bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    // Keyboard keys to float
+    const keys = 'QWERTYUIOPASDFGHJKLZXCVBNM'.split('');
+    const keyCount = 30;
+
+    // Create floating key objects
+    function randomKey() {
+      return keys[Math.floor(Math.random() * keys.length)];
+    }
+
+    function randomColor() {
+      const colors = ['#364f6b', '#43dde6', '#f7b801', '#fc5185', '#3fc1c9'];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    function createKeyObj() {
+      return {
+        key: randomKey(),
+        x: Math.random() * width,
+        y: Math.random() * height,
+        size: 38 + Math.random() * 16,
+        color: randomColor(),
+        speedX: (Math.random() - 0.5) * 0.6,
+        speedY: 0.3 + Math.random() * 0.7,
+        angle: Math.random() * 2 * Math.PI,
+        rotation: (Math.random() - 0.5) * 0.01
+      };
+    }
+
+    let keyObjs = Array.from({length: keyCount}, createKeyObj);
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    // Mouse interaction
+    canvas.addEventListener('mousemove', e => {
+      const mx = e.clientX, my = e.clientY;
+      keyObjs.forEach(key => {
+        // If mouse near key, repel it
+        const dx = key.x - mx;
+        const dy = key.y - my;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 90) {
+          key.x += dx / dist * 6;
+          key.y += dy / dist * 6;
+        }
+      });
+    });
+
+    canvas.addEventListener('click', e => {
+      // On click, randomize some keys
+      for (let i = 0; i < 5; i++) {
+        keyObjs[Math.floor(Math.random() * keyObjs.length)] = createKeyObj();
+      }
+    });
+
+    // Draw key as a rounded rectangle with letter
+    function drawKey(ctx, x, y, w, h, r, color, letter, angle) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(-w/2 + r, -h/2);
+      ctx.arcTo(w/2, -h/2, w/2, h/2, r);
+      ctx.arcTo(w/2, h/2, -w/2, h/2, r);
+      ctx.arcTo(-w/2, h/2, -w/2, -h/2, r);
+      ctx.arcTo(-w/2, -h/2, w/2, -h/2, r);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.7;
+      ctx.shadowColor = "#222";
+      ctx.shadowBlur = 6;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+
+      // Letter
+      ctx.fillStyle = "#fff";
+      ctx.font = `${w/1.5}px Segoe UI, Arial, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(letter, 0, 0);
+      ctx.restore();
+    }
+
+    // Animation loop
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      keyObjs.forEach(key => {
+        key.x += key.speedX;
+        key.y += key.speedY;
+        key.angle += key.rotation;
+
+        // Wrap around
+        if (key.x < -50) key.x = width+50;
+        if (key.x > width+50) key.x = -50;
+        if (key.y > height+50) {
+          key.y = -50;
+          key.key = randomKey();
+        }
+
+        drawKey(ctx, key.x, key.y, key.size, key.size, 11, key.color, key.key, key.angle);
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
